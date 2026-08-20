@@ -20,7 +20,7 @@ public sealed class BrushMask
         for (int i = 0; i < Alpha.Length; i++) Alpha[i] = (byte)(255 - Alpha[i]);
     }
 
-    public void Paint(double x, double y, double radius, double flow, bool erase)
+    public void Paint(double x, double y, double radius, double flow, double feather, bool erase)
     {
         int left = Math.Max(0, (int)Math.Floor(x - radius));
         int right = Math.Min(Width - 1, (int)Math.Ceiling(x + radius));
@@ -28,13 +28,14 @@ public sealed class BrushMask
         int bottom = Math.Min(Height - 1, (int)Math.Ceiling(y + radius));
         double safeRadius = Math.Max(1, radius);
         double strength = Math.Clamp(flow, 0, 1);
+        double hardEdge = Math.Clamp(1 - feather, 0.001, 1);
 
         for (int py = top; py <= bottom; py++)
         for (int px = left; px <= right; px++)
         {
             double distance = Math.Sqrt(Math.Pow(px - x, 2) + Math.Pow(py - y, 2)) / safeRadius;
             if (distance > 1) continue;
-            double falloff = 1 - distance;
+            double falloff = distance <= hardEdge ? 1 : 1 - (distance - hardEdge) / Math.Max(0.001, 1 - hardEdge);
             falloff = falloff * falloff * (3 - 2 * falloff);
             int index = py * Width + px;
             double current = Alpha[index];
